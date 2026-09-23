@@ -3,9 +3,9 @@ import json
 from app.core.ports import LLMPort
 
 _SYSTEM_INSTRUCTION = (
-    "You decompose a Brazilian consumption tax reform question into "
-    "independent, verifiable sub-questions. Respond with a JSON array of "
-    "strings only, no prose, no markdown fences."
+    "Voce decompoe uma pergunta sobre a reforma tributaria do consumo "
+    "brasileira em sub-perguntas independentes e verificaveis. Responda "
+    "apenas com um array JSON de strings, sem texto adicional, sem markdown."
 )
 
 
@@ -18,7 +18,7 @@ class Planner:
         self._llm = llm
 
     def plan(self, query: str) -> list[str]:
-        prompt = f"Question: {query}"
+        prompt = f"Pergunta: {query}"
         response = self._llm.generate(_SYSTEM_INSTRUCTION, prompt)
 
         try:
