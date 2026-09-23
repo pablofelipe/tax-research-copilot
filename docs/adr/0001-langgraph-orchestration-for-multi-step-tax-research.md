@@ -1,0 +1,109 @@
+# ADR-0001: Multi-Step Tax Research Orchestration with LangGraph
+
+## Status
+
+Accepted
+
+## Context
+
+A prior project in this author's portfolio answers point-in-time questions against a single, stable, authoritative source (US Treasury exchange rate data), through a linear five-step pipeline (semantic retrieval, LLM rerank, structured output) with no cycles and no conditional branching. That decision — plain FastAPI orchestration, no agent framework — was made deliberately, not by default: the two reasons on record are that the problem has none of the complexity an orchestration framework earns its keep on (cycles, deep conditional branching, multiple coordinated agents), and that a plain stack trace is faster to debug than tracing execution across a graph's abstract nodes. That decision is documented publicly by the author, not as a numbered ADR in that project's repository. It stands on its own for the problem it was made for.
+
+Tax Research Copilot targets a structurally different problem: Brazil's consumption tax reform (EC 132/2023, LC 214/2025) spans a multi-year transition (2026–2033), with sources that change over time and sometimes disagree with each other — statute text, subsequent infralegal regulation, and interpretive opinions published by law firms. Answering a non-trivial question in this domain requires:
+
+- decomposing a complex question into independently verifiable sub-questions (retrieval is not a single call, it is N);
+- detecting and surfacing disagreement between sources instead of silently picking one;
+- carrying state across steps, where a later step depends on an earlier one and may need retry or correction;
+- pausing mid-flow for human approval when confidence is low, not only reporting a final answer.
+
+These four requirements are the actual justification for introducing an orchestration framework here. They do not apply to the single-source, point-query problem this author solved without one — the two decisions answer different problems and are not in tension with each other.
+
+## Decision
+
+Adopt LangGraph for multi-step orchestration, structured as a five-node state graph with PostgreSQL-backed checkpointing.
+
+### Graph structure
+
+1. **Planner** — decomposes the user's question into independent, verifiable sub-questions.
+2. **Researcher** — retrieves cited excerpts per sub-question from the indexed corpus; no citation, no answer (unsupported claims are never produced).
+3. **Critic** — verifies that each citation actually supports the claim made from it, and flags disagreement when two sources (e.g., statute text vs. a law firm's position) conflict on the same point.
+4. **Evaluator** — aggregates confidence across sub-answers; below a configured threshold, forces a blocking pause for human review — not a best-effort suggestion.
+5. **Report Generator** — produces a structured response, with a dedicated disputed-positions section whenever the Critic has flagged a conflict.
+
+State is persisted through a LangGraph checkpointer backed by PostgreSQL, so a human-review pause survives a process restart without losing progress already made in earlier nodes.
+
+### Output schema
+
+```python
+class SourceCitation(BaseModel):
+    source_type: Literal["primary", "secondary"]  # primary = statute/official gazette/tax authority; secondary = law firm opinion
+    document_id: str
+    title: str
+    published_at: date
+    content_hash: str
+    excerpt: str
+    url: str | None
+
+class SubAnswer(BaseModel):
+    sub_question: str
+    answer: str
+    citations: list[SourceCitation]
+    confidence: float
+
+class DisputedPosition(BaseModel):
+    topic: str
+    positions: list[SubAnswer]   # conflicting sub-answers on the same topic, each with its own citation
+    resolution_note: str | None  # context only, never a verdict — e.g. "tax authority has not yet published a position on this point"
+
+class TaxResearchResponse(BaseModel):
+    query: str
+    sub_answers: list[SubAnswer]
+    disputed_positions: list[DisputedPosition]
+    overall_confidence: float
+    requires_human_review: bool
+    human_review_notes: str | None
+    generated_at: datetime
+```
+
+`DisputedPosition` reuses `SubAnswer` rather than duplicating its shape: the Critic groups sub-answers that disagree on the same topic instead of producing a parallel structure for conflicts. The system never resolves a disputed position on its own — `resolution_note` carries context, never a decision, consistent with the rule that a secondary source's position is never presented as if it were normative text.
+
+### Confidence threshold
+
+Fixed at 0.7 for v1. Per-question-type configuration is explicitly deferred, not implemented, and tracked below as an open question for a future ADR.
+
+### Vector store
+
+pgvector, on the same PostgreSQL instance already required for checkpointing — rather than a separate ChromaDB instance or a dedicated vector database (e.g., Qdrant). Consolidating onto one already-required system is the more defensible choice here: it avoids operating a second stateful service for data that benefits from staying inside a single system boundary, and it produces a real architectural trade-off worth defending, rather than a default carried over from a prior project.
+
+### Go ingestion service scope (v1)
+
+Limited to source ingestion and versioning — fetching, hashing, and dating documents from official sources. MCP exposure is explicitly deferred to a future ADR. The service is designed with a clean domain interface (a source-repository port) so that adding an MCP adapter later requires only a new adapter behind the existing port, not a restructuring of the ingestion domain logic.
+
+## Consequences
+
+**Positive**
+
+- Demonstrates genuine multi-step, stateful agent orchestration and human-in-the-loop as a first-class flow, not an unhandled exception path.
+- Keeps the orchestration-framework decision scoped to the class of problem that actually requires it, so it does not contradict the framework-free decision made for a structurally different, single-source problem elsewhere in the same portfolio.
+- Infra consolidation (one PostgreSQL instance for both checkpoints and vectors) is an explicit, defensible trade-off rather than an unexamined default.
+
+**Negative**
+
+- PostgreSQL becomes a more critical dependency (checkpoints and vectors together), increasing the blast radius of an outage compared to isolating vector storage in a separate service.
+- Deferring MCP exposure means the Go service's tool-calling interface stays unproven until a later ADR forces it into existence; if a consumer-side requirement appears sooner than expected, this becomes a blocking dependency instead of parallel work.
+
+**Deferred, not rejected**
+
+- Configurable confidence threshold per question type.
+- MCP exposure from the Go ingestion service.
+
+## Alternatives Considered
+
+- **No orchestration framework, hand-rolled control flow** (the approach used elsewhere in this author's portfolio for a different problem shape): rejected for this project — the requirement set (conditional branching, multi-step state with retry, a blocking human-review pause that survives a process restart) would mean re-implementing a smaller, less-tested version of what a purpose-built framework already provides.
+- **ChromaDB**, reused from a prior project: rejected — would add no new architectural surface or evidence of judgment beyond what already exists in this author's portfolio.
+- **Qdrant**, a dedicated vector database: rejected for v1 — no requirement identified that PostgreSQL/pgvector cannot meet at this project's expected scale. Revisit if retrieval volume or vector-specific features (advanced filtering, multi-tenancy) later justify a dedicated service.
+- **Full Go service scope including MCP exposure in v1**: rejected — no proven consumer-side requirement yet, and the planned domain boundary makes adding it later low-cost, so building it speculatively now is unjustified.
+
+## Open Questions Tracked for Future ADRs
+
+- Configurable confidence threshold per question type, once real usage data shows the fixed 0.7 threshold is too coarse.
+- MCP exposure from the Go ingestion service, once a concrete consumer-side requirement exists on the Python/LangGraph side.
