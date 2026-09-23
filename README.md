@@ -25,4 +25,4 @@ uv run pytest
 
 ## Status
 
-Early development. Domain contracts and graph nodes are being built incrementally under strict TDD; the nodes are not yet wired into an executable LangGraph graph.
+Early development. Domain contracts, the five graph nodes, and the wired `StateGraph` (`app/graph/build.py`) exist and are covered by unit tests, including the blocking human-review pause. Not yet built: real retrieval/LLM adapters (the graph only runs today against test doubles), the Go ingestion service, and any deployment/runtime entry point.
