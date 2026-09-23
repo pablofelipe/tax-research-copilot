@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-A prior project in this author's portfolio answers point-in-time questions against a single, stable, authoritative source (US Treasury exchange rate data), through a linear five-step pipeline (semantic retrieval, LLM rerank, structured output) with no cycles and no conditional branching. That decision — plain FastAPI orchestration, no agent framework — was made deliberately, not by default: the two reasons on record are that the problem has none of the complexity an orchestration framework earns its keep on (cycles, deep conditional branching, multiple coordinated agents), and that a plain stack trace is faster to debug than tracing execution across a graph's abstract nodes. That decision is documented publicly by the author, not as a numbered ADR in that project's repository. It stands on its own for the problem it was made for.
+A prior project by the same author answers point-in-time questions against a single, stable, authoritative source (US Treasury exchange rate data), through a linear five-step pipeline (semantic retrieval, LLM rerank, structured output) with no cycles and no conditional branching. That decision — plain FastAPI orchestration, no agent framework — was made deliberately, not by default: the two reasons on record are that the problem has none of the complexity an orchestration framework earns its keep on (cycles, deep conditional branching, multiple coordinated agents), and that a plain stack trace is faster to debug than tracing execution across a graph's abstract nodes. That decision is documented publicly by the author, not as a numbered ADR in that project's repository. It stands on its own for the problem it was made for.
 
 Tax Research Copilot targets a structurally different problem: Brazil's consumption tax reform (EC 132/2023, LC 214/2025) spans a multi-year transition (2026–2033), with sources that change over time and sometimes disagree with each other — statute text, subsequent infralegal regulation, and interpretive opinions published by law firms. Answering a non-trivial question in this domain requires:
 
@@ -83,7 +83,7 @@ Limited to source ingestion and versioning — fetching, hashing, and dating doc
 **Positive**
 
 - Demonstrates genuine multi-step, stateful agent orchestration and human-in-the-loop as a first-class flow, not an unhandled exception path.
-- Keeps the orchestration-framework decision scoped to the class of problem that actually requires it, so it does not contradict the framework-free decision made for a structurally different, single-source problem elsewhere in the same portfolio.
+- Keeps the orchestration-framework decision scoped to the class of problem that actually requires it, so it does not contradict the framework-free decision made for a structurally different, single-source problem in the author's other project.
 - Infra consolidation (one PostgreSQL instance for both checkpoints and vectors) is an explicit, defensible trade-off rather than an unexamined default.
 
 **Negative**
@@ -98,8 +98,8 @@ Limited to source ingestion and versioning — fetching, hashing, and dating doc
 
 ## Alternatives Considered
 
-- **No orchestration framework, hand-rolled control flow** (the approach used elsewhere in this author's portfolio for a different problem shape): rejected for this project — the requirement set (conditional branching, multi-step state with retry, a blocking human-review pause that survives a process restart) would mean re-implementing a smaller, less-tested version of what a purpose-built framework already provides.
-- **ChromaDB**, reused from a prior project: rejected — would add no new architectural surface or evidence of judgment beyond what already exists in this author's portfolio.
+- **No orchestration framework, hand-rolled control flow** (the approach used in the author's other project, for a different problem shape): rejected for this project — the requirement set (conditional branching, multi-step state with retry, a blocking human-review pause that survives a process restart) would mean re-implementing a smaller, less-tested version of what a purpose-built framework already provides.
+- **ChromaDB**, reused from a prior project: rejected — would add no new architectural surface beyond what the author's existing project already demonstrates.
 - **Qdrant**, a dedicated vector database: rejected for v1 — no requirement identified that PostgreSQL/pgvector cannot meet at this project's expected scale. Revisit if retrieval volume or vector-specific features (advanced filtering, multi-tenancy) later justify a dedicated service.
 - **Full Go service scope including MCP exposure in v1**: rejected — no proven consumer-side requirement yet, and the planned domain boundary makes adding it later low-cost, so building it speculatively now is unjustified.
 
@@ -107,3 +107,14 @@ Limited to source ingestion and versioning — fetching, hashing, and dating doc
 
 - Configurable confidence threshold per question type, once real usage data shows the fixed 0.7 threshold is too coarse.
 - MCP exposure from the Go ingestion service, once a concrete consumer-side requirement exists on the Python/LangGraph side.
+- Deriving Researcher confidence (partly or fully) from retrieval-quality signals once a concrete vector-store adapter exists (see Amendment below), rather than relying solely on LLM self-report.
+
+## Amendment: Researcher Confidence Signal
+
+Added during implementation of the Researcher node, not decided by the original text above.
+
+The Researcher calls the retrieval port first; an empty result raises an error without ever calling the LLM — no citation means no answer, consistent with this ADR's Researcher guardrail. When citations are found, a single LLM call receives the sub-question and the retrieved excerpts and returns both the synthesized answer and a self-reported confidence value, bound to `[0, 1]` by the `SubAnswer` schema.
+
+**Alternative considered**: derive confidence deterministically from a retrieval signal (e.g., citation count, retrieval score) instead of LLM self-report. Rejected for v1 — no retrieval implementation exists yet to produce a meaningful score, and citation count alone would not capture whether the excerpts actually support the specific claim made. Revisit once a concrete vector-store adapter exists (tracked above).
+
+This is documented here rather than as a separate ADR because it changes the confidence signal the Evaluator's aggregation (ADR-0002) directly depends on — the same subject this ADR already governs.

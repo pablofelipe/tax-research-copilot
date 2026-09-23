@@ -6,6 +6,13 @@ from app.graph.evaluator import EvaluationResult
 
 
 class ReportGenerator:
+    """No LLM call: every field is already produced upstream (Researcher's
+    synthesized text, Critic's disputed positions), so composing
+    human_review_notes procedurally avoids a hallucination surface in a
+    field whose only job is pointing the reviewer at data already present
+    in this same response.
+    """
+
     def __init__(self, clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)):
         self._clock = clock
 

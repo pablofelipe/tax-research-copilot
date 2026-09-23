@@ -32,6 +32,13 @@ class CriticError(Exception):
 
 
 class Critic:
+    """Verification and conflict detection are two separate LLM calls: the
+    former is meaningful for one sub-answer in isolation, the latter is
+    inherently cross-sub-answer and only makes sense once the full set is
+    known, so forcing them into one call/schema would couple two unrelated
+    questions for no benefit.
+    """
+
     def __init__(self, llm: LLMPort):
         self._llm = llm
 
