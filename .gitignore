@@ -1,2 +1,18 @@
 CLAUDE.md
 .claude/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Go
+services/ingestion/bin/
+
+# Env
+.env
+.env.*
+!.env.example
