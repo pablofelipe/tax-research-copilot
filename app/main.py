@@ -16,7 +16,7 @@ from app.adapters.pgvector_retrieval_adapter import PgVectorRetrievalAdapter
 from app.adapters.postgres_audit_repository import PostgresAuditRepository
 from app.graph.audit import build_audit_record
 from app.graph.build import build_graph
-from app.observability.tracing import configure_tracing
+from app.observability.tracing import DEFAULT_OTLP_ENDPOINT, configure_tracing
 
 DEFAULT_DATABASE_URL = "postgres://tax_research:tax_research@localhost:5432/tax_research"
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
@@ -51,12 +51,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--database-url", default=DEFAULT_DATABASE_URL)
     parser.add_argument("--ollama-url", default=DEFAULT_OLLAMA_URL)
+    parser.add_argument("--otlp-endpoint", default=DEFAULT_OTLP_ENDPOINT)
     args = parser.parse_args(argv)
 
     if not args.query and not args.resume_thread_id:
         parser.error("a query is required, unless --resume-thread-id is given")
 
-    configure_tracing("tax-research-copilot")
+    configure_tracing("tax-research-copilot", args.otlp_endpoint)
 
     audit_repository = PostgresAuditRepository(psycopg.connect(args.database_url, autocommit=True))
     human_decision: str | None = None

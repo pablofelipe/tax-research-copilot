@@ -14,7 +14,7 @@ from app.evaluation.harness import run_suite
 from app.evaluation.langgraph_runner import LangGraphRunner
 from app.graph.build import build_graph
 from app.main import DEFAULT_DATABASE_URL, DEFAULT_OLLAMA_URL, EMBEDDING_MODEL, LLM_MODEL
-from app.observability.tracing import configure_tracing
+from app.observability.tracing import DEFAULT_OTLP_ENDPOINT, configure_tracing
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,9 +26,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--limit", type=int, default=None, help="only run the first N cases (for a quick smoke run)"
     )
+    parser.add_argument("--otlp-endpoint", default=DEFAULT_OTLP_ENDPOINT)
     args = parser.parse_args(argv)
 
-    configure_tracing("tax-research-copilot-evaluate")
+    configure_tracing("tax-research-copilot-evaluate", args.otlp_endpoint)
 
     cases = load_dataset()
     if args.limit is not None:
