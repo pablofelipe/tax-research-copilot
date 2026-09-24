@@ -1,0 +1,128 @@
+[
+  {
+    "id": "ibs-o-que-e",
+    "question": "O que e o IBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["competência compartilhada entre Estados, Municípios e Distrito Federal"]
+  },
+  {
+    "id": "cbs-o-que-e",
+    "question": "O que e a CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["Contribuição Social sobre Bens e Serviços"]
+  },
+  {
+    "id": "imposto-seletivo-o-que-e",
+    "question": "O que e o Imposto Seletivo?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["prejudiciais à saúde ou ao meio ambiente"]
+  },
+  {
+    "id": "ibs-competencia",
+    "question": "Quem e competente pelo IBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["competência compartilhada entre Estados, Municípios e Distrito Federal"]
+  },
+  {
+    "id": "cbs-competencia",
+    "question": "Quem e competente pela CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["de competência da União"]
+  },
+  {
+    "id": "operacoes-com-incidencia",
+    "question": "Sobre quais operacoes incidem IBS e CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["operações onerosas com bens ou com serviços"]
+  },
+  {
+    "id": "operacoes-sem-incidencia",
+    "question": "Quais operacoes nao sofrem incidencia de IBS e CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["O IBS e a CBS não incidem sobre"]
+  },
+  {
+    "id": "quem-e-contribuinte",
+    "question": "Quem e considerado contribuinte do IBS e da CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["É contribuinte do IBS e da CBS"]
+  },
+  {
+    "id": "quem-e-adquirente",
+    "question": "Quem e o adquirente?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["obrigado ao pagamento ou a qualquer outra forma de contraprestação"]
+  },
+  {
+    "id": "quem-e-destinatario",
+    "question": "Quem e o destinatario?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["aquele a quem for fornecido o bem ou serviço"]
+  },
+  {
+    "id": "documento-fiscal-eletronico",
+    "question": "Como funciona o documento fiscal eletronico?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["documento fiscal eletrônico"]
+  },
+  {
+    "id": "como-funciona-credito",
+    "question": "Como funciona o credito do IBS e da CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["apropriar créditos do IBS e da CBS"]
+  },
+  {
+    "id": "como-funciona-ressarcimento",
+    "question": "Como funciona o ressarcimento?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["ressarcimento integral ou parcial"]
+  },
+  {
+    "id": "devolucao-pessoas-fisicas",
+    "question": "Como funciona a devolucao do IBS e da CBS para pessoas fisicas?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["devolução geral de IBS e de CBS a pessoas físicas"]
+  },
+  {
+    "id": "cesta-basica-nacional",
+    "question": "O que e a Cesta Basica Nacional?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["Cesta Básica Nacional de Alimentos"]
+  },
+  {
+    "id": "produtos-anexo-i",
+    "question": "Quais produtos estao no Anexo I?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["Anexo I"]
+  },
+  {
+    "id": "regimes-diferenciados",
+    "question": "Quais regimes diferenciados existem?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["regimes diferenciados, específicos ou favorecidos"]
+  },
+  {
+    "id": "atividades-reducao-aliquota",
+    "question": "Quais atividades possuem reducao de aliquota?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["REDUÇÃO DE 60%"]
+  },
+  {
+    "id": "aliquota-zero",
+    "question": "Quais operacoes possuem aliquota zero?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["operações imunes, isentas ou sujeitas a alíquota zero"]
+  },
+  {
+    "id": "regime-especifico-setor",
+    "question": "Como funciona o regime especifico para o setor de servicos financeiros?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["regime específico de serviços financeiros"]
+  },
+  {
+    "id": "venda-mercadoria-informacoes",
+    "question": "Uma empresa realiza uma venda de mercadoria. Quais informacoes precisam ser consideradas para determinar o IBS e a CBS?",
+    "expected_document_ids": ["lc-214-2025"],
+    "required_keywords": ["base de cálculo"]
+  }
+]
