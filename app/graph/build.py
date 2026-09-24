@@ -1,8 +1,10 @@
+from collections.abc import Callable
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import interrupt
+from opentelemetry import trace
 
 from app.core.ports import LLMPort, RetrievalPort
 from app.core.schemas import CONFIDENCE_THRESHOLD
@@ -13,6 +15,22 @@ from app.graph.planner import Planner
 from app.graph.report_generator import ReportGenerator
 from app.graph.researcher import Researcher
 from app.graph.state import GraphState
+
+_tracer = trace.get_tracer("tax_research_copilot.graph")
+
+
+def _traced(name: str, node: Callable[[GraphState], dict]) -> Callable[[GraphState], dict]:
+    """Wraps a node function in its own span, named after the node. A
+    no-op unless a TracerProvider has been configured (see
+    app.observability.tracing) — safe to leave on in every unit test,
+    which never configure one.
+    """
+
+    def wrapped(state: GraphState) -> dict:
+        with _tracer.start_as_current_span(name):
+            return node(state)
+
+    return wrapped
 
 
 def build_graph(
@@ -90,14 +108,14 @@ def build_graph(
         return {"response": response}
 
     graph = StateGraph(GraphState)
-    graph.add_node("guardrail", guardrail_node)
-    graph.add_node("out_of_scope", out_of_scope_node)
-    graph.add_node("plan", plan_node)
-    graph.add_node("research", research_node)
-    graph.add_node("critique", critique_node)
-    graph.add_node("evaluate", evaluate_node)
-    graph.add_node("human_review", human_review_node)
-    graph.add_node("report", report_node)
+    graph.add_node("guardrail", _traced("guardrail", guardrail_node))
+    graph.add_node("out_of_scope", _traced("out_of_scope", out_of_scope_node))
+    graph.add_node("plan", _traced("plan", plan_node))
+    graph.add_node("research", _traced("research", research_node))
+    graph.add_node("critique", _traced("critique", critique_node))
+    graph.add_node("evaluate", _traced("evaluate", evaluate_node))
+    graph.add_node("human_review", _traced("human_review", human_review_node))
+    graph.add_node("report", _traced("report", report_node))
 
     graph.add_edge(START, "guardrail")
     graph.add_conditional_edges(

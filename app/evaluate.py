@@ -14,6 +14,7 @@ from app.evaluation.harness import run_suite
 from app.evaluation.langgraph_runner import LangGraphRunner
 from app.graph.build import build_graph
 from app.main import DEFAULT_DATABASE_URL, DEFAULT_OLLAMA_URL, EMBEDDING_MODEL, LLM_MODEL
+from app.observability.tracing import configure_tracing
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,6 +27,8 @@ def main(argv: list[str] | None = None) -> int:
         "--limit", type=int, default=None, help="only run the first N cases (for a quick smoke run)"
     )
     args = parser.parse_args(argv)
+
+    configure_tracing("tax-research-copilot-evaluate")
 
     cases = load_dataset()
     if args.limit is not None:

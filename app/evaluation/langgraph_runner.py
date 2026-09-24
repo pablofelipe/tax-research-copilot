@@ -2,8 +2,11 @@ import uuid
 
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
+from opentelemetry import trace
 
 from app.core.schemas import TaxResearchResponse
+
+_tracer = trace.get_tracer("tax_research_copilot.evaluation")
 
 
 class LangGraphRunner:
@@ -18,9 +21,10 @@ class LangGraphRunner:
 
     def run(self, query: str) -> TaxResearchResponse:
         config = {"configurable": {"thread_id": str(uuid.uuid4())}}
-        result = self._graph.invoke({"query": query}, config=config)
+        with _tracer.start_as_current_span("graph_run"):
+            result = self._graph.invoke({"query": query}, config=config)
 
-        if "__interrupt__" in result:
-            result = self._graph.invoke(Command(resume="approved"), config=config)
+            if "__interrupt__" in result:
+                result = self._graph.invoke(Command(resume="approved"), config=config)
 
         return result["response"]

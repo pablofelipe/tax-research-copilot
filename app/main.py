@@ -7,6 +7,7 @@ import httpx
 import psycopg
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.types import Command
+from opentelemetry import trace
 
 from app.adapters.ollama_client import OllamaClient
 from app.adapters.ollama_embedding_client import OllamaEmbeddingClient
@@ -15,11 +16,14 @@ from app.adapters.pgvector_retrieval_adapter import PgVectorRetrievalAdapter
 from app.adapters.postgres_audit_repository import PostgresAuditRepository
 from app.graph.audit import build_audit_record
 from app.graph.build import build_graph
+from app.observability.tracing import configure_tracing
 
 DEFAULT_DATABASE_URL = "postgres://tax_research:tax_research@localhost:5432/tax_research"
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
 LLM_MODEL = "llama3.1:8b"
 EMBEDDING_MODEL = "nomic-embed-text"
+
+_tracer = trace.get_tracer("tax_research_copilot.main")
 
 
 def _build_compiled_graph(database_url: str, ollama_url: str, checkpointer):
@@ -52,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.query and not args.resume_thread_id:
         parser.error("a query is required, unless --resume-thread-id is given")
 
+    configure_tracing("tax-research-copilot")
+
     audit_repository = PostgresAuditRepository(psycopg.connect(args.database_url, autocommit=True))
     human_decision: str | None = None
 
@@ -63,11 +69,13 @@ def main(argv: list[str] | None = None) -> int:
             thread_id = args.resume_thread_id
             human_decision = args.decision
             config = {"configurable": {"thread_id": thread_id}}
-            result = graph.invoke(Command(resume=args.decision), config=config)
+            with _tracer.start_as_current_span("graph_run"):
+                result = graph.invoke(Command(resume=args.decision), config=config)
         else:
             thread_id = str(uuid.uuid4())
             config = {"configurable": {"thread_id": thread_id}}
-            result = graph.invoke({"query": args.query}, config=config)
+            with _tracer.start_as_current_span("graph_run"):
+                result = graph.invoke({"query": args.query}, config=config)
 
             if "__interrupt__" in result:
                 pause = result["__interrupt__"][0].value
