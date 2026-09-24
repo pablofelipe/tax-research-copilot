@@ -28,6 +28,33 @@ class OutOfScopeResponse(BaseModel):
     generated_at: datetime
 
 
+class AuditedCitation(BaseModel):
+    """A citation as recorded in the audit trail — id/title/hash only,
+    not the full excerpt text, to keep audit rows small.
+    """
+
+    document_id: str
+    title: str
+    content_hash: str
+
+
+class AuditRecord(BaseModel):
+    """One row of the audit trail: a reconstructible summary of a
+    completed graph run, including an out-of-scope rejection.
+    """
+
+    thread_id: str
+    query: str
+    in_scope: bool
+    sub_questions: list[str] = []
+    citations: list[AuditedCitation] = []
+    disputed_topics: list[str] = []
+    overall_confidence: float | None = None
+    requires_human_review: bool | None = None
+    human_decision: str | None = None
+    recorded_at: datetime
+
+
 class ChunkToIndex(BaseModel):
     """A single embedded chunk of a source document, ready to persist."""
 

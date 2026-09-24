@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.core.schemas import ChunkSearchResult, ChunkToIndex, SourceCitation
+from app.core.schemas import AuditRecord, ChunkSearchResult, ChunkToIndex, SourceCitation
 
 
 class RetrievalPort(Protocol):
@@ -42,3 +42,11 @@ class ChunkRepository(Protocol):
     def save_chunks(self, chunks: list[ChunkToIndex]) -> None: ...
 
     def search(self, query_embedding: list[float], top_k: int) -> list[ChunkSearchResult]: ...
+
+
+class AuditRepository(Protocol):
+    """Persists one row per completed graph run, for later reconstruction
+    of what was asked, cited, and decided.
+    """
+
+    def record(self, entry: AuditRecord) -> None: ...
