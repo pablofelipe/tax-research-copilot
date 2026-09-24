@@ -9,10 +9,7 @@ High-level status of the project. Updated as work lands — same discipline as t
 - The five graph nodes (Planner, Researcher, Critic, Evaluator, Report Generator), each unit-tested against test doubles.
 - The nodes wired into an executable LangGraph `StateGraph`, including the blocking human-review `interrupt()`.
 - `OllamaClient`, a real `LLMPort` adapter backed by a local Llama 3.1 8B model (see ADR-0001's LLM Provider amendment).
-
-## In progress
-
-- Go ingestion service (`services/ingestion/`) — fetches, hashes, and versions real source documents into a `source_documents` table in PostgreSQL. First real target: the DOU (Diário Oficial da União) publication of LC 214/2025, chosen over the Planalto `ccivil_03` consolidated text because it is the as-published, dated primary source the project's point-in-time requirement (CLAUDE.md Section 4) needs.
+- Go ingestion service (`services/ingestion/`) — fetches, hashes, and versions real source documents into a `source_documents` table in PostgreSQL. First real target: the DOU (Diário Oficial da União) publication of LC 214/2025, chosen over the Planalto `ccivil_03` consolidated text because it is the as-published, dated primary source the project's point-in-time requirement (CLAUDE.md Section 4) needs. Verified end to end against the real page (757,274 characters ingested, re-running is a no-op).
 
 ## Pending
 
