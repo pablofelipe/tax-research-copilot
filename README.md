@@ -10,7 +10,7 @@ A question in this domain typically requires synthesizing several sources that c
 
 ## Architecture
 
-A five-node state graph (Planner → Researcher → Critic → Evaluator → Report Generator), orchestrated with LangGraph and checkpointed to PostgreSQL, so a human-review pause survives a process restart. Source ingestion and versioning run as a separate Go service. See [`docs/adr/`](docs/adr/) for the full architectural record:
+A five-node state graph (Planner → Researcher → Critic → Evaluator → Report Generator), orchestrated with LangGraph and checkpointed to PostgreSQL, so a human-review pause survives a process restart. The LLM is Llama 3.1 8B served locally through Ollama. Source ingestion and versioning run as a separate Go service. See [`docs/adr/`](docs/adr/) for the full architectural record:
 
 - [ADR-0001](docs/adr/0001-langgraph-orchestration-for-multi-step-tax-research.md) — why LangGraph, the graph structure, the output schema, the confidence threshold, the vector store choice, and the Go service's v1 scope.
 - [ADR-0002](docs/adr/0002-evaluator-confidence-aggregation.md) — how the Evaluator aggregates sub-answer confidence and when it forces human review.
@@ -19,10 +19,11 @@ A five-node state graph (Planner → Researcher → Critic → Evaluator → Rep
 
 ```bash
 uv sync
-docker compose up -d   # PostgreSQL + pgvector for local development
+docker compose up -d                                  # PostgreSQL + pgvector, and Ollama
+docker exec tax-research-copilot-ollama-1 ollama pull llama3.1:8b
 uv run pytest
 ```
 
 ## Status
 
-Early development. Domain contracts, the five graph nodes, and the wired `StateGraph` (`app/graph/build.py`) exist and are covered by unit tests, including the blocking human-review pause. Not yet built: real retrieval/LLM adapters (the graph only runs today against test doubles), the Go ingestion service, and any deployment/runtime entry point.
+Early development. Domain contracts, the five graph nodes, and the wired `StateGraph` (`app/graph/build.py`) exist and are covered by unit tests, including the blocking human-review pause. The `OllamaClient` LLM adapter exists and is unit-tested against a mocked HTTP transport. Not yet built: a real retrieval/vector-store adapter (the graph only runs today against test doubles for retrieval), the Go ingestion service, and any deployment/runtime entry point.
