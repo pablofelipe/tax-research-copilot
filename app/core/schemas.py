@@ -16,6 +16,18 @@ class SourceCitation(BaseModel):
     url: str | None = None
 
 
+class OutOfScopeResponse(BaseModel):
+    """Returned when the intent guardrail rejects a query before any
+    retrieval or LLM call is made — deliberately has no citations field,
+    since fabricating one to satisfy TaxResearchResponse's schema would
+    defeat the guardrail's purpose.
+    """
+
+    query: str
+    message: str
+    generated_at: datetime
+
+
 class ChunkToIndex(BaseModel):
     """A single embedded chunk of a source document, ready to persist."""
 

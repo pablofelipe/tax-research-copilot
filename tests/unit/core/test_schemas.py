@@ -3,7 +3,13 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from app.core.schemas import DisputedPosition, SourceCitation, SubAnswer, TaxResearchResponse
+from app.core.schemas import (
+    DisputedPosition,
+    OutOfScopeResponse,
+    SourceCitation,
+    SubAnswer,
+    TaxResearchResponse,
+)
 
 
 def _citation(**overrides) -> dict:
@@ -113,3 +119,13 @@ def test_response_rejects_empty_sub_answers():
             human_review_notes=None,
             generated_at=datetime(2026, 1, 1),
         )
+
+
+def test_out_of_scope_response_requires_no_citations():
+    response = OutOfScopeResponse(
+        query="Qual a capital da Franca?",
+        message="Fora do escopo deste sistema (reforma tributaria do consumo).",
+        generated_at=datetime(2026, 1, 1),
+    )
+
+    assert response.query == "Qual a capital da Franca?"
