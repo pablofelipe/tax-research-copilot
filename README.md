@@ -26,4 +26,4 @@ uv run pytest
 
 ## Status
 
-Early development. Domain contracts, the five graph nodes, and the wired `StateGraph` (`app/graph/build.py`) exist and are covered by unit tests, including the blocking human-review pause. The `OllamaClient` LLM adapter exists and is unit-tested against a mocked HTTP transport. Not yet built: a real retrieval/vector-store adapter (the graph only runs today against test doubles for retrieval), the Go ingestion service, and any deployment/runtime entry point.
+Early development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current checklist of what's done, in progress, and pending.
