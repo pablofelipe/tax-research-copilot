@@ -27,18 +27,29 @@ services:
       timeout: 5s
       retries: 5
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+
   app:
     build: .
     profiles: ["tools"]
     depends_on:
       - postgres
       - ollama
+      - jaeger
 
   ingestion:
     build: services/ingestion
     profiles: ["tools"]
     depends_on:
       - postgres
+      - jaeger
 
 volumes:
   postgres_data:
