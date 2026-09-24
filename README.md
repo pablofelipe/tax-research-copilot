@@ -1,6 +1,11 @@
 # Tax Research Copilot
 
+[![CI](https://github.com/pablofelipe/tax-research-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/pablofelipe/tax-research-copilot/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 A multi-step research assistant for Brazil's consumption tax reform (EC 132/2023, LC 214/2025, and the infralegal regulation that follows it through the 2026–2033 transition).
+
+> **Not legal or tax advice.** See [DISCLAIMER.md](DISCLAIMER.md).
 
 ## Scope
 
@@ -10,13 +15,16 @@ A question in this domain typically requires synthesizing several sources that c
 
 ## Architecture
 
-A five-node state graph (Planner → Researcher → Critic → Evaluator → Report Generator), orchestrated with LangGraph and checkpointed to PostgreSQL, so a human-review pause survives a process restart. The LLM is Llama 3.1 8B served locally through Ollama, and retrieval is backed by pgvector with embeddings from nomic-embed-text (also served locally through Ollama). Source ingestion and versioning run as a separate Go service. See [`docs/adr/`](docs/adr/) for the full architectural record:
+A five-node state graph (Planner → Researcher → Critic → Evaluator → Report Generator), orchestrated with LangGraph and checkpointed to PostgreSQL, so a human-review pause survives a process restart. The LLM is Llama 3.1 8B served locally through Ollama, and retrieval is backed by pgvector with embeddings from nomic-embed-text (also served locally through Ollama). Source ingestion and versioning run as a separate Go service.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram and component map, and [`docs/adr/`](docs/adr/) for the reasoning behind each decision:
 
 - [ADR-0001](docs/adr/0001-langgraph-orchestration-for-multi-step-tax-research.md) — why LangGraph, the graph structure, the output schema, the confidence threshold, the vector store choice, and the Go service's v1 scope.
 - [ADR-0002](docs/adr/0002-evaluator-confidence-aggregation.md) — how the Evaluator aggregates sub-answer confidence and when it forces human review.
 - [ADR-0003](docs/adr/0003-local-container-packaging.md) — how the Python and Go services are packaged as containers for local use.
 - [ADR-0004](docs/adr/0004-audit-trail-persistence.md) — what gets recorded for every completed run, and why it's written from the CLI rather than a graph node.
 - [ADR-0005](docs/adr/0005-opentelemetry-instrumentation.md) — how graph nodes and the ingestion CLI are traced, and why there's no Python↔Go trace propagation yet.
+- [ADR-0006](docs/adr/0006-ci-scope.md) — what runs in CI, and why the real evaluation harness doesn't.
 
 ## Getting started
 
@@ -45,6 +53,17 @@ docker compose run --rm app python -m app.main --database-url postgres://tax_res
 docker compose run --rm ingestion --url <dou-page-url> --document-id <id> --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --otlp-endpoint jaeger:4318
 ```
 
+## Troubleshooting
+
+Hit a real problem running this locally (Docker Desktop, WSL, Ollama, timeouts)? See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — every entry there is an issue actually hit while building this project, with what actually fixed it.
+
 ## Status
 
 Early development. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current checklist of what's done, in progress, and pending.
+
+## More
+
+- [DISCLAIMER.md](DISCLAIMER.md) — what this system does and does not guarantee; it is not legal or tax advice.
+- [SECURITY.md](SECURITY.md) — how to report a vulnerability.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — community standards for this repository.
+- [LICENSE](LICENSE) — Apache License 2.0.
