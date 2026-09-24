@@ -16,6 +16,35 @@ class SourceCitation(BaseModel):
     url: str | None = None
 
 
+class ChunkToIndex(BaseModel):
+    """A single embedded chunk of a source document, ready to persist."""
+
+    document_id: str
+    source_type: Literal["primary", "secondary"]
+    title: str
+    published_at: date
+    content_hash: str
+    url: str | None = None
+    chunk_index: int
+    chunk_text: str
+    embedding: list[float]
+
+
+class ChunkSearchResult(BaseModel):
+    """A chunk returned by a similarity search, without its embedding
+    vector — callers only need the text and its source metadata to build
+    a SourceCitation.
+    """
+
+    document_id: str
+    source_type: Literal["primary", "secondary"]
+    title: str
+    published_at: date
+    content_hash: str
+    url: str | None = None
+    chunk_text: str
+
+
 class SubAnswer(BaseModel):
     sub_question: str
     answer: str

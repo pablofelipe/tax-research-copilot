@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.core.schemas import SourceCitation
+from app.core.schemas import ChunkSearchResult, ChunkToIndex, SourceCitation
 
 
 class RetrievalPort(Protocol):
@@ -32,3 +32,13 @@ class EmbeddingPort(Protocol):
     """
 
     def embed(self, text: str) -> list[float]: ...
+
+
+class ChunkRepository(Protocol):
+    """Storage for embedded document chunks, backing both indexing (write)
+    and retrieval (similarity search / read).
+    """
+
+    def save_chunks(self, chunks: list[ChunkToIndex]) -> None: ...
+
+    def search(self, query_embedding: list[float], top_k: int) -> list[ChunkSearchResult]: ...
