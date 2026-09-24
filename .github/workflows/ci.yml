@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  TEST_DATABASE_URL: postgres://tax_research:tax_research@localhost:5432/tax_research
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: tax_research
+          POSTGRES_PASSWORD: tax_research
+          POSTGRES_DB: tax_research
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tax_research"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync
+      - run: uv run pytest tests/unit -v
+      - run: uv run pytest tests/integration -v -m integration
+
+  go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ingestion
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: tax_research
+          POSTGRES_PASSWORD: tax_research
+          POSTGRES_DB: tax_research
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tax_research"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/ingestion/go.mod
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go test -tags=integration ./...
