@@ -21,3 +21,14 @@ class LLMPort(Protocol):
     """
 
     def generate(self, system_instruction: str, prompt: str) -> str: ...
+
+
+class EmbeddingPort(Protocol):
+    """Generic text-embedding capability, deliberately provider-agnostic.
+
+    Used both when indexing the corpus (embedding chunks) and at query
+    time (embedding a search query), so both sides stay in the same
+    vector space regardless of which concrete model is behind this port.
+    """
+
+    def embed(self, text: str) -> list[float]: ...
