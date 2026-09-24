@@ -10,10 +10,10 @@ High-level status of the project. Updated as work lands — same discipline as t
 - The nodes wired into an executable LangGraph `StateGraph`, including the blocking human-review `interrupt()`.
 - `OllamaClient`, a real `LLMPort` adapter backed by a local Llama 3.1 8B model (see ADR-0001's LLM Provider amendment).
 - Go ingestion service (`services/ingestion/`) — fetches, hashes, and versions real source documents into a `source_documents` table in PostgreSQL. First real target: the DOU (Diário Oficial da União) publication of LC 214/2025, chosen over the Planalto `ccivil_03` consolidated text because it is the as-published, dated primary source the project's point-in-time requirement (CLAUDE.md Section 4) needs. Verified end to end against the real page (757,274 characters ingested, re-running is a no-op).
+- Python retrieval adapter — `EmbeddingPort`/`OllamaEmbeddingClient` (nomic-embed-text via the same local Ollama instance), pure `chunk_text`, `Indexer` (chunk → embed → persist), `ChunkRepository` port with a real `PgVectorChunkRepository` (pgvector, cosine similarity, HNSW index), and `PgVectorRetrievalAdapter` implementing `RetrievalPort` (see ADR-0001's Retrieval Adapter amendment). Verified end to end against the real LC 214/2025 text: 545 chunks indexed, a real Portuguese question about the CBS reference rate returned on-topic cited excerpts from the actual statute text.
 
 ## Pending
 
-- Python retrieval adapter (`RetrievalPort` implementation) — reads `source_documents`, chunks and embeds the text, and serves `SourceCitation`-shaped results to the Researcher node. Needs an embedding-model decision (candidate: an Ollama-served embedding model, consistent with the zero-cost-first principle already applied to the chat model).
 - A runtime entry point that actually invokes the compiled graph end-to-end against real adapters (currently only exercised in unit tests against fakes).
 - Evaluation harness (versioned question/answer/source dataset, accuracy/groundedness/cost/latency measured per full graph run, not per LLM call — CLAUDE.md's non-functional requirements).
 - OpenTelemetry spans per graph node, trace propagated across the Python → Go boundary.
