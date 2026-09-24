@@ -27,6 +27,19 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build: .
+    profiles: ["tools"]
+    depends_on:
+      - postgres
+      - ollama
+
+  ingestion:
+    build: services/ingestion
+    profiles: ["tools"]
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
   ollama_data:

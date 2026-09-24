@@ -14,6 +14,7 @@ A five-node state graph (Planner → Researcher → Critic → Evaluator → Rep
 
 - [ADR-0001](docs/adr/0001-langgraph-orchestration-for-multi-step-tax-research.md) — why LangGraph, the graph structure, the output schema, the confidence threshold, the vector store choice, and the Go service's v1 scope.
 - [ADR-0002](docs/adr/0002-evaluator-confidence-aggregation.md) — how the Evaluator aggregates sub-answer confidence and when it forces human review.
+- [ADR-0003](docs/adr/0003-local-container-packaging.md) — how the Python and Go services are packaged as containers for local use.
 
 ## Getting started
 
@@ -29,6 +30,16 @@ uv run python -m app.main "Uma pergunta sobre a reforma tributaria"
 
 # Run the versioned evaluation dataset against the real graph (slow on CPU-only inference; use --limit for a quick check):
 uv run python -m app.evaluate --limit 1
+```
+
+### Running in containers instead of native toolchains
+
+The app (Python) and ingestion (Go) images are opt-in — `docker compose up -d` still only starts PostgreSQL and Ollama (see [ADR-0003](docs/adr/0003-local-container-packaging.md)):
+
+```bash
+docker compose build app ingestion
+docker compose run --rm app python -m app.main --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --ollama-url http://ollama:11434 "Uma pergunta sobre a reforma tributaria"
+docker compose run --rm ingestion --url <dou-page-url> --document-id <id> --database-url postgres://tax_research:tax_research@postgres:5432/tax_research
 ```
 
 ## Status
