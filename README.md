@@ -16,18 +16,20 @@ A five-node state graph (Planner → Researcher → Critic → Evaluator → Rep
 - [ADR-0002](docs/adr/0002-evaluator-confidence-aggregation.md) — how the Evaluator aggregates sub-answer confidence and when it forces human review.
 - [ADR-0003](docs/adr/0003-local-container-packaging.md) — how the Python and Go services are packaged as containers for local use.
 - [ADR-0004](docs/adr/0004-audit-trail-persistence.md) — what gets recorded for every completed run, and why it's written from the CLI rather than a graph node.
+- [ADR-0005](docs/adr/0005-opentelemetry-instrumentation.md) — how graph nodes and the ingestion CLI are traced, and why there's no Python↔Go trace propagation yet.
 
 ## Getting started
 
 ```bash
 uv sync
-docker compose up -d                                  # PostgreSQL + pgvector, and Ollama
+docker compose up -d                                  # PostgreSQL + pgvector, Ollama, and Jaeger
 docker exec tax-research-copilot-ollama-1 ollama pull llama3.1:8b
 docker exec tax-research-copilot-ollama-1 ollama pull nomic-embed-text
 uv run pytest
 
 # Ask a real question against the compiled graph:
 uv run python -m app.main "Uma pergunta sobre a reforma tributaria"
+# Traces land in Jaeger at http://localhost:16686
 
 # Run the versioned evaluation dataset against the real graph (slow on CPU-only inference; use --limit for a quick check):
 uv run python -m app.evaluate --limit 1
@@ -39,8 +41,8 @@ The app (Python) and ingestion (Go) images are opt-in — `docker compose up -d`
 
 ```bash
 docker compose build app ingestion
-docker compose run --rm app python -m app.main --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --ollama-url http://ollama:11434 "Uma pergunta sobre a reforma tributaria"
-docker compose run --rm ingestion --url <dou-page-url> --document-id <id> --database-url postgres://tax_research:tax_research@postgres:5432/tax_research
+docker compose run --rm app python -m app.main --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --ollama-url http://ollama:11434 --otlp-endpoint http://jaeger:4318/v1/traces "Uma pergunta sobre a reforma tributaria"
+docker compose run --rm ingestion --url <dou-page-url> --document-id <id> --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --otlp-endpoint jaeger:4318
 ```
 
 ## Status
