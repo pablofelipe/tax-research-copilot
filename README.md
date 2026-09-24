@@ -23,6 +23,12 @@ docker compose up -d                                  # PostgreSQL + pgvector, a
 docker exec tax-research-copilot-ollama-1 ollama pull llama3.1:8b
 docker exec tax-research-copilot-ollama-1 ollama pull nomic-embed-text
 uv run pytest
+
+# Ask a real question against the compiled graph:
+uv run python -m app.main "Uma pergunta sobre a reforma tributaria"
+
+# Run the versioned evaluation dataset against the real graph (slow on CPU-only inference; use --limit for a quick check):
+uv run python -m app.evaluate --limit 1
 ```
 
 ## Status
