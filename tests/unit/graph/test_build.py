@@ -89,3 +89,22 @@ def test_graph_runs_without_a_checkpointer_when_no_pause_is_needed():
     result = graph.invoke({"query": "Quando o CBS entra em vigor?"})
 
     assert result["response"].overall_confidence == 0.9
+
+
+class NeverCalledLLM:
+    def generate(self, system_instruction: str, prompt: str) -> str:
+        raise AssertionError("LLM must not be called for an out-of-scope query")
+
+
+class NeverCalledRetrieval:
+    def search(self, query: str) -> list[SourceCitation]:
+        raise AssertionError("retrieval must not be called for an out-of-scope query")
+
+
+def test_graph_rejects_an_out_of_scope_query_without_calling_llm_or_retrieval():
+    graph = build_graph(NeverCalledLLM(), NeverCalledRetrieval())
+
+    result = graph.invoke({"query": "Qual a capital da Franca?"})
+
+    assert result["response"].query == "Qual a capital da Franca?"
+    assert "escopo" in result["response"].message.lower()

@@ -8,6 +8,7 @@ from app.core.ports import LLMPort, RetrievalPort
 from app.core.schemas import CONFIDENCE_THRESHOLD
 from app.graph.critic import Critic
 from app.graph.evaluator import EvaluationResult, Evaluator
+from app.graph.guardrail import Guardrail
 from app.graph.planner import Planner
 from app.graph.report_generator import ReportGenerator
 from app.graph.researcher import Researcher
@@ -21,11 +22,21 @@ def build_graph(
     threshold: float = CONFIDENCE_THRESHOLD,
     checkpointer: Any = None,
 ) -> CompiledStateGraph:
+    guardrail = Guardrail()
     planner = Planner(llm)
     researcher = Researcher(retrieval, llm)
     critic = Critic(llm)
     evaluator = Evaluator(threshold)
     report_generator = ReportGenerator()
+
+    def guardrail_node(state: GraphState) -> dict:
+        return {"in_scope": guardrail.is_in_scope(state["query"])}
+
+    def route_after_guardrail(state: GraphState) -> str:
+        return "plan" if state["in_scope"] else "out_of_scope"
+
+    def out_of_scope_node(state: GraphState) -> dict:
+        return {"response": guardrail.reject(state["query"])}
 
     def plan_node(state: GraphState) -> dict:
         return {"sub_questions": planner.plan(state["query"])}
@@ -79,6 +90,8 @@ def build_graph(
         return {"response": response}
 
     graph = StateGraph(GraphState)
+    graph.add_node("guardrail", guardrail_node)
+    graph.add_node("out_of_scope", out_of_scope_node)
     graph.add_node("plan", plan_node)
     graph.add_node("research", research_node)
     graph.add_node("critique", critique_node)
@@ -86,7 +99,13 @@ def build_graph(
     graph.add_node("human_review", human_review_node)
     graph.add_node("report", report_node)
 
-    graph.add_edge(START, "plan")
+    graph.add_edge(START, "guardrail")
+    graph.add_conditional_edges(
+        "guardrail",
+        route_after_guardrail,
+        {"plan": "plan", "out_of_scope": "out_of_scope"},
+    )
+    graph.add_edge("out_of_scope", END)
     graph.add_edge("plan", "research")
     graph.add_edge("research", "critique")
     graph.add_edge("critique", "evaluate")
