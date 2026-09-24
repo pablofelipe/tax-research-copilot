@@ -117,3 +117,11 @@ def test_detect_conflicts_raises_when_index_out_of_range():
 
     with pytest.raises(CriticError):
         critic.detect_conflicts([_sub_answer()])
+
+
+def test_detect_conflicts_raises_when_a_group_has_fewer_than_two_indices():
+    llm = FakeLLM('[{"topic": "x", "indices": [0], "resolution_note": null}]')
+    critic = Critic(llm)
+
+    with pytest.raises(CriticError):
+        critic.detect_conflicts([_sub_answer(), _sub_answer()])

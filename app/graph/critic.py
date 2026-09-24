@@ -1,6 +1,8 @@
 import json
 from typing import NamedTuple
 
+from pydantic import ValidationError
+
 from app.core.ports import LLMPort
 from app.core.schemas import DisputedPosition, SubAnswer
 
@@ -79,13 +81,16 @@ class Critic:
             if any(not isinstance(i, int) or i < 0 or i >= len(sub_answers) for i in indices):
                 raise CriticError(f"critic LLM conflict group has out-of-range indices: {group!r}")
 
-            disputes.append(
-                DisputedPosition(
-                    topic=group["topic"],
-                    positions=[sub_answers[i] for i in indices],
-                    resolution_note=group.get("resolution_note"),
+            try:
+                disputes.append(
+                    DisputedPosition(
+                        topic=group["topic"],
+                        positions=[sub_answers[i] for i in indices],
+                        resolution_note=group.get("resolution_note"),
+                    )
                 )
-            )
+            except ValidationError as exc:
+                raise CriticError(f"critic LLM conflict group is invalid: {group!r}") from exc
 
         return disputes
 
