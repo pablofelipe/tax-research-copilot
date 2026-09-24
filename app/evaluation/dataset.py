@@ -9,8 +9,8 @@ _DEFAULT_PATH = Path(__file__).parent / "dataset.json"
 def load_dataset(path: Path = _DEFAULT_PATH) -> list[EvaluationCase]:
     """Loads the versioned evaluation dataset. Every entry's
     required_keywords must be a phrase verified against the real indexed
-    corpus before being added — see CLAUDE.md's ban on fabricated
-    evaluation data.
+    corpus before being added — this project bans fabricated evaluation
+    data.
     """
     raw = json.loads(path.read_text(encoding="utf-8"))
     return [EvaluationCase(**entry) for entry in raw]

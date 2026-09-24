@@ -14,7 +14,7 @@ ADR-0001 defined the Evaluator node's responsibility — aggregate confidence ac
 
 `overall_confidence` is the minimum of all `SubAnswer.confidence` values in the response, not their average.
 
-A mean lets one high-confidence sub-answer mask another that barely cleared the bar — or didn't. The confidence-gating guardrail (CLAUDE.md Section 8: no low-confidence response reaches the user without explicit human review) exists to catch the weakest claim in a response, not the response's central tendency. `overall_confidence` is only as strong as its weakest verified claim.
+A mean lets one high-confidence sub-answer mask another that barely cleared the bar — or didn't. The confidence-gating guardrail (no low-confidence response reaches the user without explicit human review) exists to catch the weakest claim in a response, not the response's central tendency. `overall_confidence` is only as strong as its weakest verified claim.
 
 ### Disputed positions force human review regardless of confidence
 
