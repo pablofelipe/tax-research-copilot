@@ -1,6 +1,7 @@
 import argparse
 import sys
 import uuid
+from datetime import datetime, timezone
 
 import httpx
 import psycopg
@@ -11,6 +12,8 @@ from app.adapters.ollama_client import OllamaClient
 from app.adapters.ollama_embedding_client import OllamaEmbeddingClient
 from app.adapters.pgvector_chunk_repository import PgVectorChunkRepository
 from app.adapters.pgvector_retrieval_adapter import PgVectorRetrievalAdapter
+from app.adapters.postgres_audit_repository import PostgresAuditRepository
+from app.graph.audit import build_audit_record
 from app.graph.build import build_graph
 
 DEFAULT_DATABASE_URL = "postgres://tax_research:tax_research@localhost:5432/tax_research"
@@ -49,12 +52,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.query and not args.resume_thread_id:
         parser.error("a query is required, unless --resume-thread-id is given")
 
+    audit_repository = PostgresAuditRepository(psycopg.connect(args.database_url, autocommit=True))
+    human_decision: str | None = None
+
     with PostgresSaver.from_conn_string(args.database_url) as checkpointer:
         checkpointer.setup()
         graph = _build_compiled_graph(args.database_url, args.ollama_url, checkpointer)
 
         if args.resume_thread_id:
-            config = {"configurable": {"thread_id": args.resume_thread_id}}
+            thread_id = args.resume_thread_id
+            human_decision = args.decision
+            config = {"configurable": {"thread_id": thread_id}}
             result = graph.invoke(Command(resume=args.decision), config=config)
         else:
             thread_id = str(uuid.uuid4())
@@ -73,7 +81,18 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 return 0
 
-        print(result["response"].model_dump_json(indent=2))
+        response = result["response"]
+        audit_repository.record(
+            build_audit_record(
+                thread_id=thread_id,
+                query=result.get("query", args.query or ""),
+                response=response,
+                human_decision=human_decision,
+                clock=lambda: datetime.now(timezone.utc),
+            )
+        )
+
+        print(response.model_dump_json(indent=2))
         return 0
 
 
