@@ -15,6 +15,7 @@ A five-node state graph (Planner → Researcher → Critic → Evaluator → Rep
 - [ADR-0001](docs/adr/0001-langgraph-orchestration-for-multi-step-tax-research.md) — why LangGraph, the graph structure, the output schema, the confidence threshold, the vector store choice, and the Go service's v1 scope.
 - [ADR-0002](docs/adr/0002-evaluator-confidence-aggregation.md) — how the Evaluator aggregates sub-answer confidence and when it forces human review.
 - [ADR-0003](docs/adr/0003-local-container-packaging.md) — how the Python and Go services are packaged as containers for local use.
+- [ADR-0004](docs/adr/0004-audit-trail-persistence.md) — what gets recorded for every completed run, and why it's written from the CLI rather than a graph node.
 
 ## Getting started
 
