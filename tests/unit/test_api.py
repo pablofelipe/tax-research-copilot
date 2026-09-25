@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.api import create_app
 from app.core.schemas import SubAnswer, SourceCitation, TaxResearchResponse
+from app.graph.critic import CriticError
 
 
 def _response(query: str) -> TaxResearchResponse:
@@ -41,6 +42,14 @@ class FakeGraph:
     def invoke(self, state, config):
         self.invoked_with.append((state, config))
         return self._result
+
+
+class RaisingGraph:
+    def __init__(self, exc: Exception):
+        self._exc = exc
+
+    def invoke(self, state, config):
+        raise self._exc
 
 
 class FakeAuditRepository:
@@ -90,6 +99,7 @@ def test_ask_records_an_audit_entry_for_a_completed_run():
 def test_ask_returns_pending_review_status_when_the_graph_pauses():
     interrupt_value = {
         "query": "pergunta sensivel",
+        "sub_answers": [_response("pergunta sensivel").sub_answers[0]],
         "overall_confidence": 0.4,
         "disputed_positions": [],
     }
@@ -105,7 +115,19 @@ def test_ask_returns_pending_review_status_when_the_graph_pauses():
     body = result.json()
     assert body["status"] == "pending_human_review"
     assert "thread_id" in body
+    assert body["sub_answers"][0]["answer"] == "resposta"
     assert audit.recorded == []
+
+
+def test_ask_returns_a_json_error_when_a_graph_node_raises_a_known_domain_error():
+    graph = RaisingGraph(CriticError("critic LLM response is not valid JSON: '...'"))
+    client = TestClient(create_app(graph, FakeAuditRepository()))
+
+    result = client.post("/ask", json={"query": "pergunta"})
+
+    assert result.status_code == 502
+    assert result.headers["content-type"].startswith("application/json")
+    assert "critic LLM response" in result.json()["detail"]
 
 
 def test_root_serves_the_html_form():

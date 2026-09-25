@@ -9,8 +9,13 @@ from pydantic import BaseModel
 
 from app.core.ports import AuditRepository
 from app.graph.audit import build_audit_record
+from app.graph.critic import CriticError
+from app.graph.evaluator import EvaluatorError
+from app.graph.planner import PlannerError
+from app.graph.researcher import ResearcherError
 
 _STATIC_DIR = Path(__file__).parent / "static"
+_DOMAIN_ERRORS = (PlannerError, ResearcherError, CriticError, EvaluatorError)
 
 
 class CompiledGraph(Protocol):
@@ -43,7 +48,15 @@ def create_app(graph: CompiledGraph, audit_repository: AuditRepository) -> FastA
     def ask(request: AskRequest):
         thread_id = str(uuid.uuid4())
         config = {"configurable": {"thread_id": thread_id}}
-        result = graph.invoke({"query": request.query}, config=config)
+        try:
+            result = graph.invoke({"query": request.query}, config=config)
+        except _DOMAIN_ERRORS as exc:
+            # These are the graph's own documented failure modes (an LLM
+            # producing an ungrounded or malformed response — see ADR-0001's
+            # Known Limitations), not application bugs: surfaced as a clean
+            # JSON error instead of FastAPI's default plain-text 500 page,
+            # which the demo page can't parse.
+            return JSONResponse(status_code=502, content={"detail": str(exc)})
 
         if "__interrupt__" in result:
             pause = result["__interrupt__"][0].value
@@ -53,6 +66,7 @@ def create_app(graph: CompiledGraph, audit_repository: AuditRepository) -> FastA
                     "status": "pending_human_review",
                     "thread_id": thread_id,
                     "overall_confidence": pause["overall_confidence"],
+                    "sub_answers": [sa.model_dump(mode="json") for sa in pause["sub_answers"]],
                 },
             )
 

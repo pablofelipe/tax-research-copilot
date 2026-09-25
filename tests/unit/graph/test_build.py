@@ -69,6 +69,8 @@ def test_graph_pauses_for_human_review_when_confidence_is_low():
 
     assert "__interrupt__" in paused
     assert "response" not in paused
+    pause_value = paused["__interrupt__"][0].value
+    assert pause_value["sub_answers"][0].answer == "A partir de 2026, de forma escalonada."
 
     resumed = graph.invoke(Command(resume="approved"), config=config)
 

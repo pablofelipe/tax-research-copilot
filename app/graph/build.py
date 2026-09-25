@@ -88,6 +88,7 @@ def build_graph(
         interrupt(
             {
                 "query": state["query"],
+                "sub_answers": state["sub_answers"],
                 "overall_confidence": state["overall_confidence"],
                 "disputed_positions": state["disputed_positions"],
             }
