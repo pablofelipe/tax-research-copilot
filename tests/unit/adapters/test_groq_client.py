@@ -51,3 +51,37 @@ def test_generate_raises_on_http_error_status():
 
     with pytest.raises(httpx.HTTPStatusError):
         groq.generate("instrucao", "prompt")
+
+
+def test_generate_retries_after_a_429_and_succeeds():
+    calls = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return httpx.Response(429, headers={"retry-after": "2"}, json={"error": "rate limited"})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok apos retry"}}]})
+
+    slept: list[float] = []
+    groq = GroqClient(model="llama-3.1-8b-instant", client=_client(handler), sleep=slept.append)
+
+    result = groq.generate("instrucao", "prompt")
+
+    assert result == "ok apos retry"
+    assert calls["count"] == 2
+    assert slept == [2.0]
+
+
+def test_generate_raises_after_exhausting_retries_on_429():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"retry-after": "1"}, json={"error": "rate limited"})
+
+    slept: list[float] = []
+    groq = GroqClient(
+        model="llama-3.1-8b-instant", client=_client(handler), sleep=slept.append, max_retries=2
+    )
+
+    with pytest.raises(httpx.HTTPStatusError):
+        groq.generate("instrucao", "prompt")
+
+    assert slept == [1.0, 1.0]
