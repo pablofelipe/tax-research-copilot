@@ -25,6 +25,11 @@ class GroqClient:
                     {"role": "user", "content": prompt},
                 ],
                 "stream": False,
+                # gpt-oss models spend hundreds of hidden "reasoning" tokens
+                # per call by default (medium effort), which blows through
+                # the free tier's per-minute token limit across a single
+                # graph run's several LLM calls — "low" cuts that ~3-4x.
+                "reasoning_effort": "low",
             },
         )
         response.raise_for_status()

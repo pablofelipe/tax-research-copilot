@@ -40,6 +40,7 @@ def test_generate_sends_system_and_user_messages_to_the_chat_completions_endpoin
         {"role": "system", "content": "instrucao do sistema"},
         {"role": "user", "content": "prompt do usuario"},
     ]
+    assert captured["payload"]["reasoning_effort"] == "low"
 
 
 def test_generate_raises_on_http_error_status():
