@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+import httpx
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
@@ -57,6 +58,15 @@ def create_app(graph: CompiledGraph, audit_repository: AuditRepository) -> FastA
             # JSON error instead of FastAPI's default plain-text 500 page,
             # which the demo page can't parse.
             return JSONResponse(status_code=502, content={"detail": str(exc)})
+        except httpx.HTTPStatusError as exc:
+            # GroqClient already retries a 429 against Retry-After; this is
+            # what escapes after exhausting those retries, or any other
+            # upstream LLM provider failure — same "don't leak a plain-text
+            # 500" reasoning as above.
+            return JSONResponse(
+                status_code=503,
+                content={"detail": f"the LLM provider is unavailable: {exc}"},
+            )
 
         if "__interrupt__" in result:
             pause = result["__interrupt__"][0].value

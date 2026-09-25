@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 
+import httpx
 from fastapi.testclient import TestClient
 
 from app.api import create_app
@@ -128,6 +129,19 @@ def test_ask_returns_a_json_error_when_a_graph_node_raises_a_known_domain_error(
     assert result.status_code == 502
     assert result.headers["content-type"].startswith("application/json")
     assert "critic LLM response" in result.json()["detail"]
+
+
+def test_ask_returns_a_json_error_when_the_llm_provider_is_rate_limited():
+    request = httpx.Request("POST", "https://groq.local/openai/v1/chat/completions")
+    response = httpx.Response(429, request=request)
+    graph = RaisingGraph(httpx.HTTPStatusError("rate limited", request=request, response=response))
+    client = TestClient(create_app(graph, FakeAuditRepository()))
+
+    result = client.post("/ask", json={"query": "pergunta"})
+
+    assert result.status_code == 503
+    assert result.headers["content-type"].startswith("application/json")
+    assert "detail" in result.json()
 
 
 def test_root_serves_the_html_form():
