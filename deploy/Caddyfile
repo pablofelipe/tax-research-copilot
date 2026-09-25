@@ -1,0 +1,15 @@
+{$DOMAIN} {
+	basic_auth {
+		{$CADDY_USER} {$CADDY_HASH}
+	}
+
+	rate_limit {
+		zone demo {
+			key {remote_host}
+			events 20
+			window 1m
+		}
+	}
+
+	reverse_proxy api:8000
+}

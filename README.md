@@ -25,6 +25,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram and comp
 - [ADR-0004](docs/adr/0004-audit-trail-persistence.md) — what gets recorded for every completed run, and why it's written from the CLI rather than a graph node.
 - [ADR-0005](docs/adr/0005-opentelemetry-instrumentation.md) — how graph nodes and the ingestion CLI are traced, and why there's no Python↔Go trace propagation yet.
 - [ADR-0006](docs/adr/0006-ci-scope.md) — what runs in CI, and why the real evaluation harness doesn't.
+- [ADR-0007](docs/adr/0007-hosted-demo-deployment.md) — hosting target, HTTP entry point, hosted LLM provider, and access control for the live demo.
 
 ## Getting started
 
@@ -52,6 +53,10 @@ docker compose build app ingestion
 docker compose run --rm app python -m app.main --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --ollama-url http://ollama:11434 --otlp-endpoint http://jaeger:4318/v1/traces "Uma pergunta sobre a reforma tributaria"
 docker compose run --rm ingestion --url <dou-page-url> --document-id <id> --database-url postgres://tax_research:tax_research@postgres:5432/tax_research --otlp-endpoint jaeger:4318
 ```
+
+## Deployment
+
+For how the hosted demo environment is set up and operated, see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Troubleshooting
 

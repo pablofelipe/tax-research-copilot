@@ -1,0 +1,38 @@
+services:
+  api:
+    build: .
+    command: python -m app.api_main
+    environment:
+      DATABASE_URL: postgres://tax_research:tax_research@postgres:5432/tax_research
+      OLLAMA_URL: http://ollama:11434
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      LLM_PROVIDER: groq
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    depends_on:
+      - postgres
+      - ollama
+      - jaeger
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: deploy
+      dockerfile: Dockerfile.caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      CADDY_USER: ${CADDY_USER}
+      CADDY_HASH: ${CADDY_HASH}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
