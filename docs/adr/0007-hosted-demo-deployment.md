@@ -27,7 +27,7 @@ The resulting approach: a single shared credential, manually rotated, provisione
 
 ### Hosting target: OCI Always Free tier
 
-An Oracle Cloud Infrastructure "Always Free" compute instance (Ampere ARM, 4 vCPU / 24 GB RAM in the free allocation) runs the existing `docker-compose.yml` stack. Chosen over Google Cloud / Azure because OCI's free tier is a permanent allocation, not a 12-month trial, and is large enough to run PostgreSQL/pgvector, the app container, and a reverse proxy at zero infrastructure cost. Known risk: Oracle reclaims Always Free instances showing sustained near-zero CPU usage; tracked as an open item below rather than solved here.
+An Oracle Cloud Infrastructure "Always Free" compute instance (Ampere ARM, `VM.Standard.A1.Flex`, up to 2 OCPUs / 12 GB RAM in the free allocation) runs the existing `docker-compose.yml` stack. Chosen over Google Cloud / Azure because OCI's free tier is a permanent allocation, not a 12-month trial. Known risks, both without full solutions here: Oracle reclaims Always Free instances showing sustained near-zero CPU/network/memory usage over a 7-day window, and the Ampere shape's free capacity is not always available at instance-creation time in a given availability domain, requiring retries; tracked as open items below.
 
 ### HTTP entry point
 
@@ -74,5 +74,6 @@ A single shared HTTP Basic Auth credential, sitting behind a Caddy reverse proxy
 
 ## Open Questions Tracked for Future ADRs
 
-- How to detect and recover from OCI reclaiming the Always Free instance for being idle — no automated monitoring/alerting is decided here.
+- How to detect and recover from OCI reclaiming the Always Free instance for being idle (CPU/network/memory below 20% utilization for 7 days) — no automated monitoring/alerting is decided here.
 - Whether manual credential provisioning needs to become semi-automated if real request volume turns out to be higher than expected.
+- Ampere A1.Flex free capacity is not always available at instance-creation time in a given availability domain ("out of host capacity" errors observed during setup). No automated retry is decided here; if this remains unreliable, revisit whether a small paid shape is an acceptable fallback within the "low cost is acceptable" constraint from the original context.
