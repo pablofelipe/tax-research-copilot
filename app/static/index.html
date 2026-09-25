@@ -43,10 +43,21 @@ function escapeHtml(text) {
 }
 
 function renderCitation(c) {
-  return `<div class="citation">[${escapeHtml(c.source_type)}] ${escapeHtml(c.title)} (${escapeHtml(c.published_at)})</div>`;
+  return `<div class="citation">${escapeHtml(c.title)} (${escapeHtml(c.published_at)})</div>`;
+}
+
+function renderOutOfScope(data) {
+  resultEl.innerHTML = `<p>${escapeHtml(data.message)}</p>`;
 }
 
 function renderResponse(data) {
+  if (data.overall_confidence === undefined) {
+    // The intent guardrail rejected the question before any retrieval or
+    // LLM call — that's OutOfScopeResponse (query/message/generated_at),
+    // a different shape from TaxResearchResponse, not a malformed answer.
+    renderOutOfScope(data);
+    return;
+  }
   let html = `<p class="confidence">Confiança geral: ${data.overall_confidence.toFixed(2)}${data.requires_human_review ? ' — pausado para revisão humana' : ''}</p>`;
   for (const sa of data.sub_answers) {
     html += `<div class="sub-answer"><strong>${escapeHtml(sa.sub_question)}</strong><p>${escapeHtml(sa.answer)}</p>`;
