@@ -47,4 +47,4 @@ Containers reach Postgres and Ollama by their Compose service DNS names (`postgr
 
 ## Open Questions Tracked for Future ADRs
 
-- Real deployment (a hosted target, secrets management, exposing an HTTP API) is explicitly out of scope here — this ADR only covers running the existing CLIs in containers on a local machine, per the scope agreed with the user. Revisit once (if) this project gains an HTTP entry point and a real hosting target.
+- Real deployment (a hosted target, secrets management, exposing an HTTP API) is explicitly out of scope here — this ADR only covers running the existing CLIs in containers on a local machine, per the scope agreed with the user. Resolved by [ADR-0007](0007-hosted-demo-deployment.md), which adds an HTTP entry point and a hosting target.
