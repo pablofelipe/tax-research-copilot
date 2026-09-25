@@ -19,7 +19,7 @@ DEFAULT_DATABASE_URL = "postgres://tax_research:tax_research@localhost:5432/tax_
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
 DEFAULT_GROQ_URL = "https://api.groq.com"
 LLM_MODEL = "llama3.1:8b"
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "openai/gpt-oss-20b"
 EMBEDDING_MODEL = "nomic-embed-text"
 
 

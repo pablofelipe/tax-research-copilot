@@ -35,11 +35,13 @@ A minimal FastAPI wrapper around the existing `graph.invoke()` call (already use
 
 ### LLM provider for the hosted demo only: Groq
 
-`LLMPort` (the existing port `OllamaClient` implements) gets a second adapter, `GroqClient`, calling Groq's OpenAI-compatible chat completions API with the same model family already validated by the evaluation dataset (Llama 3.1 8B). This is a hosted-environment-only substitution, selected via configuration/environment variable — native and containerized local runs keep using `OllamaClient` unchanged, and the domain/graph code has no knowledge of which adapter is active.
+`LLMPort` (the existing port `OllamaClient` implements) gets a second adapter, `GroqClient`, calling Groq's OpenAI-compatible chat completions API. This is a hosted-environment-only substitution, selected via configuration/environment variable — native and containerized local runs keep using `OllamaClient` unchanged, and the domain/graph code has no knowledge of which adapter is active.
+
+The model is `openai/gpt-oss-20b`, not the Llama 3.1 8B used by the evaluation dataset: Groq deprecated `llama-3.1-8b-instant` on its free/developer tier in mid-2026 (enterprise-contract access only), and recommends `openai/gpt-oss-20b` as the direct replacement. This means the hosted demo's model has not gone through this project's evaluation dataset — acceptable for a demo whose purpose is showing the system working end to end quickly, not for measuring answer quality, but worth being explicit about rather than implying parity with the evaluated model.
 
 Embeddings stay on local Ollama (`nomic-embed-text`) inside the same container stack: embedding inference is fast even on CPU (unlike autoregressive chat generation), and Groq does not serve embedding models, so there is no equivalent hosted swap to make there.
 
-Groq was chosen over other low-cost hosted options (DeepSeek, Qwen/Alibaba) for two reasons: it serves the exact model already validated in this project's evaluation dataset (no re-evaluation needed against a different model's behavior), and it avoids routing project traffic through infrastructure operated in China — not a technical concern given the public, non-sensitive nature of the ingested content, but a reasonable thing to avoid when the audience may notice and ask about it.
+Groq was chosen over other low-cost hosted options (DeepSeek, Qwen/Alibaba) mainly to avoid routing project traffic through infrastructure operated in China — not a technical concern given the public, non-sensitive nature of the ingested content, but a reasonable thing to avoid when the audience may notice and ask about it.
 
 ### Access control
 
