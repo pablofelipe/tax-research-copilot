@@ -106,3 +106,13 @@ def test_ask_returns_pending_review_status_when_the_graph_pauses():
     assert body["status"] == "pending_human_review"
     assert "thread_id" in body
     assert audit.recorded == []
+
+
+def test_root_serves_the_html_form():
+    client = TestClient(create_app(FakeGraph({}), FakeAuditRepository()))
+
+    result = client.get("/")
+
+    assert result.status_code == 200
+    assert "text/html" in result.headers["content-type"]
+    assert "<textarea" in result.text

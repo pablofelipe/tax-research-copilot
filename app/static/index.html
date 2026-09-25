@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax Research Copilot</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+  h1 { font-size: 1.4rem; }
+  textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 0.5rem; }
+  button { margin-top: 0.5rem; padding: 0.5rem 1rem; font: inherit; cursor: pointer; }
+  button:disabled { cursor: default; opacity: 0.6; }
+  #status { margin-top: 1rem; color: #555; }
+  .sub-answer { border-left: 3px solid #ccc; padding-left: 0.75rem; margin: 1rem 0; }
+  .citation { font-size: 0.85rem; color: #555; margin-top: 0.25rem; }
+  .disputed { border-left: 3px solid #c00; padding-left: 0.75rem; margin: 1rem 0; }
+  .confidence { font-size: 0.85rem; color: #555; }
+  footer { margin-top: 2rem; font-size: 0.8rem; color: #777; }
+</style>
+</head>
+<body>
+<h1>Tax Research Copilot</h1>
+<p>Pergunte sobre a reforma tributária brasileira do consumo (EC 132/2023, LC 214/2025). Este é um ambiente de demonstração — não é aconselhamento fiscal ou jurídico.</p>
+
+<textarea id="query" rows="3" placeholder="Ex: Qual é o período de transição da reforma tributária?"></textarea>
+<br>
+<button id="ask">Perguntar</button>
+<div id="status"></div>
+<div id="result"></div>
+
+<footer>Ambiente de demonstração hospedado — ver o repositório para arquitetura e decisões de design.</footer>
+
+<script>
+const askButton = document.getElementById('ask');
+const queryEl = document.getElementById('query');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function renderCitation(c) {
+  return `<div class="citation">[${escapeHtml(c.source_type)}] ${escapeHtml(c.title)} (${escapeHtml(c.published_at)})</div>`;
+}
+
+function renderResponse(data) {
+  let html = `<p class="confidence">Confiança geral: ${data.overall_confidence.toFixed(2)}${data.requires_human_review ? ' — pausado para revisão humana' : ''}</p>`;
+  for (const sa of data.sub_answers) {
+    html += `<div class="sub-answer"><strong>${escapeHtml(sa.sub_question)}</strong><p>${escapeHtml(sa.answer)}</p>`;
+    html += sa.citations.map(renderCitation).join('');
+    html += `</div>`;
+  }
+  for (const dp of data.disputed_positions || []) {
+    html += `<div class="disputed"><strong>Posição em disputa</strong><p>${escapeHtml(dp.answer)}</p></div>`;
+  }
+  resultEl.innerHTML = html;
+}
+
+function renderPending(data) {
+  resultEl.innerHTML = `<p>Pausado para revisão humana (confiança: ${data.overall_confidence.toFixed(2)}). Este ambiente de demonstração não expõe um fluxo de aprovação — a resposta final requer uma decisão humana fora deste formulário.</p>`;
+}
+
+askButton.addEventListener('click', async () => {
+  const query = queryEl.value.trim();
+  if (!query) return;
+
+  askButton.disabled = true;
+  statusEl.textContent = 'Consultando (pode levar até um minuto)...';
+  resultEl.innerHTML = '';
+
+  try {
+    const response = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const data = await response.json();
+
+    if (response.status === 202) {
+      renderPending(data);
+    } else if (response.ok) {
+      renderResponse(data);
+    } else {
+      resultEl.innerHTML = `<p>Erro: ${escapeHtml(data.detail || response.statusText)}</p>`;
+    }
+  } catch (err) {
+    resultEl.innerHTML = `<p>Falha de rede: ${escapeHtml(String(err))}</p>`;
+  } finally {
+    statusEl.textContent = '';
+    askButton.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,13 +1,16 @@
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Protocol
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 from app.core.ports import AuditRepository
 from app.graph.audit import build_audit_record
+
+_STATIC_DIR = Path(__file__).parent / "static"
 
 
 class CompiledGraph(Protocol):
@@ -31,6 +34,10 @@ def create_app(graph: CompiledGraph, audit_repository: AuditRepository) -> FastA
     the existing graph, the same way app/main.py does for the CLI.
     """
     app = FastAPI(title="Tax Research Copilot")
+
+    @app.get("/", response_class=HTMLResponse)
+    def index():
+        return (_STATIC_DIR / "index.html").read_text(encoding="utf-8")
 
     @app.post("/ask")
     def ask(request: AskRequest):
